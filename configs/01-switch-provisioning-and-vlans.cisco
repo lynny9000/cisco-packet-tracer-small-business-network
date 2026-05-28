@@ -1,0 +1,485 @@
+! Lab 01: Switch Provisioning and VLAN Access Ports
+! Platform: Cisco Packet Tracer
+! Device: SW1
+! Purpose:
+! - Configure basic switch identity and access settings
+! - Create management and department VLANs
+! - Assign access ports to VLANs
+! - Configure a management SVI
+! - Test same-VLAN and inter-VLAN behaviour before routing
+! - Move unused ports to VLAN 999 and shut them down
+
+! Topology summary:
+! SW1 Fa0/1  -> Sales-PC1
+! SW1 Fa0/2  -> Sales-PC2
+! SW1 Fa0/6  -> HR-PC1
+! SW1 Fa0/9  -> IT-PC1
+! SW1 Fa0/19 -> Admin-PC1
+
+! IP plan:
+! Sales VLAN 10:      192.168.10.0/24
+! Sales-PC1:          192.168.10.10
+! Sales-PC2:          192.168.10.11
+! Sales gateway:      192.168.10.1
+
+! HR VLAN 20:         192.168.20.0/24
+! HR-PC1:             192.168.20.10
+! HR gateway:         192.168.20.1
+
+! IT VLAN 30:         192.168.30.0/24
+! IT-PC1:             192.168.30.10
+! IT gateway:         192.168.30.1
+
+! Management VLAN 99: 192.168.99.0/24
+! SW1 management IP:  192.168.99.2
+! Admin-PC1:          192.168.99.10
+! Management gateway: 192.168.99.1
+
+! enter privileged/admin mode
+enable
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! rename the switch from the default name to sw1
+hostname SW1
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! check the live config and confirm hostname sw1 appears
+show running-config
+
+! check the saved config and confirm hostname sw1 appears after reboot
+show startup-config
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! *Do not try to look up mistyped commands as DNS names
+no ip domain-lookup
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! check the live config and confirm dns lookup is disabled
+show running-config
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! set the encrypted password for privileged/admin mode
+enable secret *****
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! check the live config and confirm enable secret is present
+show running-config
+
+! drop from privileged/admin mode to basic user mode
+disable
+
+! test that enable secret is required to return to privileged/admin mode
+enable
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! configure the local console access line
+line console 0
+
+! set the local console password
+password *****
+
+! require the console password at login
+login
+
+! stop console messages interrupting typed commands
+logging synchronous
+
+! return to global configuration mode
+exit
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! check the console line settings in the live config
+show running-config
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! hide simple line passwords in the visible configuration
+service password-encryption
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! check the live config and confirm the console password is no longer plain text
+show running-config
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! configure the remote access lines used for telnet or ssh sessions
+line vty 0 15
+
+! set the temporary remote access password
+password *****
+
+! require the vty password at remote login
+login
+
+! return to global configuration mode
+exit
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! check the vty line settings in the live config
+show running-config
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! add a warning message shown before login
+banner motd #
+authorised access only
+#
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! check the live config and confirm the banner text appears
+show running-config
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! create the management vlan
+vlan 99
+
+! name the management vlan
+name Management
+
+! return to global configuration mode
+exit
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! verify the management vlan exists
+show vlan brief
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! configure the switch management interface for vlan 99
+interface vlan 99
+
+! assign the switch management ip address
+ip address 192.168.99.2 255.255.255.0
+
+! enable the management interface
+no shutdown
+
+! return to global configuration mode
+exit
+
+! set the default gateway for switch management traffic
+ip default-gateway 192.168.99.1
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! check the switch management interface status
+show ip interface brief
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! configure the physical switch port connected to admin-pc1
+interface fastEthernet 0/19
+
+! set the port as a single-vlan access port
+switchport mode access
+
+! assign the port to the management vlan
+switchport access vlan 99
+
+! document what is connected to the port
+description Admin-PC1 management access port
+
+! enable the port
+no shutdown
+
+! return to global configuration mode
+exit
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! verify fa0/19 is assigned to vlan 99
+show vlan brief
+
+! verify vlan99 is up/up
+show ip interface brief
+
+! admin-pc1 ip settings used for management vlan testing
+! ip address: 192.168.99.10
+! subnet mask: 255.255.255.0
+! default gateway: 192.168.99.1
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! create the sales vlan
+vlan 10
+
+! name the sales vlan
+name Sales
+
+! return to global configuration mode
+exit
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! verify the sales vlan exists
+show vlan brief
+
+! enter global configuration mode so switch settings can be changed
+configure terminal
+
+! create the hr vlan
+vlan 20
+
+! name the hr vlan
+name HR
+
+! return to global configuration mode
+exit
+
+! create the it vlan
+vlan 30
+
+! name the it vlan
+name IT
+
+! return to global configuration mode
+exit
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! verify the department vlans exist
+show vlan brief
+
+! start from privileged/admin mode
+! prompt should be sw1#
+
+! enter global configuration mode
+configure terminal
+
+! configure sales access ports
+interface range fastEthernet 0/1 - 5
+
+! set ports as single-vlan access ports
+switchport mode access
+
+! assign ports to sales vlan
+switchport access vlan 10
+
+! document the port purpose
+description Sales access ports
+
+! enable the ports
+no shutdown
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! verify sales ports are assigned to vlan 10
+show vlan brief
+
+! start from privileged/admin mode
+! prompt should be sw1#
+
+! enter global configuration mode
+configure terminal
+
+! configure hr access ports
+interface range fastEthernet 0/6 - 8
+
+! set ports as single-vlan access ports
+switchport mode access
+
+! assign ports to hr vlan
+switchport access vlan 20
+
+! document the port purpose
+description HR access ports
+
+! enable the ports
+no shutdown
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! verify hr ports are assigned to vlan 20
+show vlan brief
+
+! start from privileged/admin mode
+! prompt should be sw1#
+
+! enter global configuration mode
+configure terminal
+
+! configure it access ports
+interface range fastEthernet 0/9 - 11
+
+! set ports as single-vlan access ports
+switchport mode access
+
+! assign ports to it vlan
+switchport access vlan 30
+
+! document the port purpose
+description IT access ports
+
+! enable the ports
+no shutdown
+
+! leave configuration mode and return to admin mode
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! verify it ports are assigned to vlan 30
+show vlan brief
+
+! from sales-pc1 command prompt
+! expected result: success because both pcs are in sales vlan 10
+! ping 192.168.10.11
+
+! from sales-pc1 command prompt
+! expected result: fail because sales and hr are different vlans and routing is not configured
+! ping 192.168.20.10
+
+! from sales-pc1 command prompt
+! expected result: fail because sales and it are different vlans and routing is not configured
+! ping 192.168.30.10
+
+! from hr-pc1 command prompt
+! expected result: fail because hr and it are different vlans and routing is not configured
+! ping 192.168.30.10
+
+! verify vlan membership and access port assignments
+show vlan brief
+
+! verify connected ports, vlan assignments, duplex and speed
+show interfaces status
+
+! create an unused vlan for disabled ports
+configure terminal
+
+vlan 999
+name Unused
+exit
+
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! verify unused vlan exists
+show vlan brief
+
+
+! move unused fastethernet ports into vlan 999 and shut them down
+configure terminal
+
+! fa0/12 - fa0/18 and fa0/20 - fa0/24 are unused access ports
+! gi0/1 - gi0/2 are unused gigabit uplink ports
+! unused ports are moved to vlan 999 and shut down as a basic hardening step
+
+interface range fastEthernet 0/12 - 18
+switchport mode access
+switchport access vlan 999
+description Unused shutdown ports
+shutdown
+exit
+
+interface range fastEthernet 0/20 - 24
+switchport mode access
+switchport access vlan 999
+description Unused shutdown ports
+shutdown
+exit
+
+interface range gigabitEthernet 0/1 - 2
+switchport mode access
+switchport access vlan 999
+description Unused shutdown uplink ports
+shutdown
+exit
+
+end
+
+! save the current running config so it remains after reboot
+write memory
+
+! verify unused ports are assigned to vlan 999
+show vlan brief
+
+! verify unused ports are administratively shut down
+show interfaces status
+
+
+
+
+

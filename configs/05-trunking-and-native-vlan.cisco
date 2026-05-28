@@ -1,0 +1,146 @@
+! Lab 05: Trunking and Native VLAN
+! Platform: Cisco Packet Tracer
+! Devices: SW1 and SW2
+! Purpose:
+! - Understand switch trunk links
+! - Carry multiple VLANs across one cable
+! - Configure 802.1Q trunking
+! - Understand tagged and untagged traffic
+! - Configure a native VLAN
+! - Verify trunk operation between switches
+
+! Add second switch
+! Device name: SW2
+! physical connection:
+! SW1 Gi0/2 -> SW2 Gi0/1
+
+! Use copper cross-over cable for switch-to-switch connection
+
+! Go to SW1
+configure terminal
+
+interface gigabitEthernet 0/2
+no shutdown
+
+end
+
+! Native VLAN mismatch warning appeared because:
+! - SW1 native VLAN was already set to 999
+! - SW2 was still using default native VLAN 1
+
+! Go to SW2
+enable
+configure terminal
+
+hostname SW2
+
+interface gigabitEthernet 0/1
+
+switchport mode trunk
+switchport trunk native vlan 999
+switchport trunk allowed vlan 10,20,30,99,999
+
+no shutdown
+
+end
+
+! Verify trunk status
+show interfaces trunk
+
+! Status trunking
+! Encapsulation 802.1q
+! Native vlan 999
+! 802.1Q is the trunking standard used to tag VLAN traffic
+
+! Allowed VLANs:
+! 10 sales
+! 20 hr
+! 30 it
+! 99 management
+! 999 unused
+
+! Create VLAN database on SW2
+
+configure terminal
+
+vlan 10
+name sales
+
+vlan 20
+name hr
+
+vlan 30
+name it
+
+vlan 99
+name management
+
+vlan 999
+name unused
+
+end
+
+! Verify VLANs
+show vlan brief
+
+! Verify trunk again
+show interfaces trunk
+
+! Result:
+! VLANs 10,20,30,99,999 are active and allowed across the trunk
+! Save configuration
+write memory
+
+! Move Sales-PC2 to SW2
+
+! physical connection:
+! Sales-PC2 -> SW2 Fa0/1
+
+! Go to SW2
+configure terminal
+
+interface fastEthernet 0/1
+
+switchport mode access
+switchport access vlan 10
+
+no shutdown
+
+end
+
+! Verify trunk on SW2
+show interfaces trunk
+
+! Status trunking
+! Encapsulation 802.1q
+! Native vlan 999
+
+! Verify Sales VLAN traffic across trunk
+! From Sales-PC2:
+ping 192.168.10.10
+
+! Initial ping failed because
+! SW1 Gi0/2 was still configured as an unused access port in VLAN 999
+! instead of a trunk port
+! Go to SW1
+configure terminal
+
+interface gigabitEthernet 0/2
+
+switchport mode trunk
+switchport trunk native vlan 999
+switchport trunk allowed vlan 10,20,30,99,999
+
+end
+
+! STP generated native VLAN mismatch warnings until both sides matched
+
+! Verify Sales-PC2 can now ping Sales-PC1
+ping 192.168.10.10
+
+! Result:
+! successful replies
+! VLAN 10 traffic successfully crossed the trunk link between SW1 and SW2
+
+! Save configuration
+write memory

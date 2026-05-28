@@ -1,0 +1,120 @@
+! Lab 02: Router-on-a-Stick Inter-VLAN Routing
+! Platform: Cisco Packet Tracer
+! Devices: SW1 and R1
+! Purpose:
+! - Configure SW1 Gi0/1 as an 802.1Q trunk to R1
+! - Configure router subinterfaces for VLANs 10, 20, 30 and 99
+! - Use router subinterfaces as the default gateways for each VLAN
+! - Verify inter-VLAN routing works after router configuration
+
+! physical connection:
+! SW1 Gi0/1 -> R1 Gi0/0
+
+! SW1 configuration
+! start from privileged/admin mode
+! prompt should be SW1#
+
+configure terminal
+
+interface gigabitEthernet 0/1
+description Trunk to R1 Gi0/0
+switchport mode trunk
+switchport trunk allowed vlan 10,20,30,99
+no shutdown
+exit
+
+end
+
+write memory
+
+! verify trunk status
+show interfaces trunk
+
+! R1 configuration
+! start from privileged/admin mode
+! prompt should be R1#
+
+configure terminal
+
+! create router subinterface for sales vlan 10
+interface gigabitEthernet 0/0.10
+encapsulation dot1Q 10
+ip address 192.168.10.1 255.255.255.0
+exit
+
+! create router subinterface for hr vlan 20
+interface gigabitEthernet 0/0.20
+encapsulation dot1Q 20
+ip address 192.168.20.1 255.255.255.0
+exit
+
+! create router subinterface for it vlan 30
+interface gigabitEthernet 0/0.30
+encapsulation dot1Q 30
+ip address 192.168.30.1 255.255.255.0
+exit
+
+! create router subinterface for management vlan 99
+interface gigabitEthernet 0/0.99
+encapsulation dot1Q 99
+ip address 192.168.99.1 255.255.255.0
+exit
+
+! from sales-pc1 command prompt
+! expected result: success because router-on-a-stick is now routing between vlan 10 and vlan 20
+! ping 192.168.20.10
+
+! from sales-pc1 command prompt
+! expected result: success because router-on-a-stick is now routing between vlan 10 and vlan 30
+! ping 192.168.30.10
+
+! from hr-pc1 command prompt
+! expected result: success because router-on-a-stick is now routing between vlan 20 and vlan 30
+! ping 192.168.30.10
+
+! from sales-pc1 command prompt
+! expected result: success because vlan 10 can now route to the switch management vlan 99
+! ping 192.168.99.2
+
+! verify router routing table
+show ip route
+
+! expected result:
+! C 192.168.10.0/24 directly connected via GigabitEthernet0/0.10
+! L 192.168.10.1/32 local router address for vlan 10
+! C 192.168.20.0/24 directly connected via GigabitEthernet0/0.20
+! L 192.168.20.1/32 local router address for vlan 20
+! C 192.168.30.0/24 directly connected via GigabitEthernet0/0.30
+! L 192.168.30.1/32 local router address for vlan 30
+! C 192.168.99.0/24 directly connected via GigabitEthernet0/0.99
+! L 192.168.99.1/32 local router address for vlan 99
+! Gateway of last resort is not set because no default route/internet edge is configured yet
+
+! final router-on-a-stick verification
+
+! verify router subinterfaces are up and have the correct gateway IPs
+show ip interface brief
+
+! expected result:
+! GigabitEthernet0/0.10    192.168.10.1    up    up
+! GigabitEthernet0/0.20    192.168.20.1    up    up
+! GigabitEthernet0/0.30    192.168.30.1    up    up
+! GigabitEthernet0/0.99    192.168.99.1    up    up
+
+! verify router routing table contains all directly connected vlan networks
+show ip route
+
+! expected result:
+! C 192.168.10.0/24 directly connected via GigabitEthernet0/0.10
+! C 192.168.20.0/24 directly connected via GigabitEthernet0/0.20
+! C 192.168.30.0/24 directly connected via GigabitEthernet0/0.30
+! C 192.168.99.0/24 directly connected via GigabitEthernet0/0.99
+! Gateway of last resort is not set because no default route/internet edge is configured yet
+
+! verify switch trunk to router
+! run from SW1
+show interfaces trunk
+
+! expected result:
+! Gi0/1 is trunking using 802.1Q
+! allowed vlans: 10,20,30,99

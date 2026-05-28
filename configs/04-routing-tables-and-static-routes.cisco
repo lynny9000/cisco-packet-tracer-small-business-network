@@ -1,0 +1,156 @@
+! Lab 04: Routing Tables and Static Routes
+! Platform: Cisco Packet Tracer
+! Devices: R1, ISP, SW1
+! Purpose:
+! - Understand how routers decide where to send traffic
+! - Read connected, local, static and default routes
+! - Understand next-hop IP addresses
+! - Understand return routes
+! - Understand why ping can fail one way
+! - Make show ip route feel normal before moving to STP, OSPF and wireless
+
+! Go to R1
+show ip route
+
+Gateway of last resort is 203.0.113.1 to network 0.0.0.0
+
+     192.168.10.0/24 is variably subnetted, 2 subnets, 2 masks
+C    192.168.10.0/24 is directly connected, GigabitEthernet0/0.10
+L    192.168.10.1/32 is directly connected, GigabitEthernet0/0.10
+
+     192.168.20.0/24 is variably subnetted, 2 subnets, 2 masks
+C    192.168.20.0/24 is directly connected, GigabitEthernet0/0.20
+L    192.168.20.1/32 is directly connected, GigabitEthernet0/0.20
+
+     192.168.30.0/24 is variably subnetted, 2 subnets, 2 masks
+C    192.168.30.0/24 is directly connected, GigabitEthernet0/0.30
+L    192.168.30.1/32 is directly connected, GigabitEthernet0/0.30
+
+     192.168.99.0/24 is variably subnetted, 2 subnets, 2 masks
+C    192.168.99.0/24 is directly connected, GigabitEthernet0/0.99
+L    192.168.99.1/32 is directly connected, GigabitEthernet0/0.99
+
+     203.0.113.0/30 is variably subnetted, 2 subnets, 2 masks
+C    203.0.113.0/30 is directly connected, GigabitEthernet0/1
+L    203.0.113.2/32 is directly connected, GigabitEthernet0/1
+
+S*   0.0.0.0/0 [1/0] via 203.0.113.1
+
+! local route example:
+! L 192.168.10.1/32 is directly connected, GigabitEthernet0/0.10
+! L means local
+! Local routes are the router's own interface IP addresses
+! /32 means one exact host address
+! 192.168.10.1 is R1's own IP address on VLAN 10
+
+! default route example:
+! S* 0.0.0.0/0 [1/0] via 203.0.113.1
+! S means static
+! * means default route
+
+! If R1 does not know a destination network it sends traffic to 203.0.113.1
+! 203.0.113.1 is the next-hop IP
+
+! Go to ISP
+
+show ip route
+
+! ISP only knows directly connected networks
+
+! Connected networks:
+! 198.51.100.0/24
+! 203.0.113.0/30
+
+! ISP does not know the internal VLAN networks:
+! 192.168.10.0/24
+! 192.168.20.0/24
+! 192.168.30.0/24
+! 192.168.99.0/24
+
+! Ping requires a return path
+! Reply traffic must know how to get back
+
+! Test from Internet-PC
+
+ping 192.168.10.10
+
+! Result: unreachable
+! Reason:
+! ISP does not know how to reach 192.168.10.0/24
+! Routers can only forward traffic to networks they know about
+
+! Go to ISP
+
+enable
+configure terminal
+
+ip route 192.168.10.0 255.255.255.0 203.0.113.2
+
+end
+
+! Verify static route
+
+show ip route
+
+Gateway of last resort is not set
+
+S    192.168.10.0/24 [1/0] via 203.0.113.2
+
+     198.51.100.0/24 is variably subnetted, 2 subnets, 2 masks
+C    198.51.100.0/24 is directly connected, GigabitEthernet0/1
+L    198.51.100.1/32 is directly connected, GigabitEthernet0/1
+
+     203.0.113.0/24 is variably subnetted, 2 subnets, 2 masks
+C    203.0.113.0/30 is directly connected, GigabitEthernet0/0
+L    203.0.113.1/32 is directly connected, GigabitEthernet0/0
+
+! S means static route
+! ISP now knows:
+! 192.168.10.0/24 is reachable through R1
+! via 203.0.113.2 means:
+! send traffic to R1
+
+! Note:
+! This lab demonstrates routing behaviour and return paths
+! In real environments inbound access would usually be controlled with ACLs or firewalls
+
+! Add static routes on ISP for internal VLAN networks
+! Go to ISP
+
+configure terminal
+
+ip route 192.168.20.0 255.255.255.0 203.0.113.2
+ip route 192.168.30.0 255.255.255.0 203.0.113.2
+ip route 192.168.99.0 255.255.255.0 203.0.113.2
+
+end
+
+show ip route
+
+Gateway of last resort is not set
+
+S    192.168.10.0/24 [1/0] via 203.0.113.2
+S    192.168.20.0/24 [1/0] via 203.0.113.2
+S    192.168.30.0/24 [1/0] via 203.0.113.2
+S    192.168.99.0/24 [1/0] via 203.0.113.2
+
+! ISP now knows all internal VLAN networks
+! All traffic for internal VLANs is sent to R1
+
+! Test connectivity from Internet-PC
+
+ping 192.168.20.10
+ping 192.168.30.10
+ping 192.168.99.2
+
+! Result:
+! successful replies
+
+! Static routes on ISP now allow return traffic
+! ISP knows to send internal VLAN traffic to R1
+
+! Go to R1
+write memory
+
+! Go to ISP
+write memory

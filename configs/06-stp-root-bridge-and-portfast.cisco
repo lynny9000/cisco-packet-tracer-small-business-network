@@ -1,0 +1,45 @@
+! Lab 06: STP Root Bridge and PortFast
+! Platform: Cisco Packet Tracer
+! Devices: SW1 and SW2
+! Purpose:
+! - Understand why switching loops are dangerous
+! - Understand how STP prevents loops
+! - Observe STP blocking redundant links
+! - Identify the STP root bridge
+! - Configure SW1 as root bridge
+! - Configure PortFast on PC-facing access ports
+! - Verify STP operation
+
+! Verify root bridge
+show spanning-tree vlan 10
+
+! This bridge is the root
+! SW1 is now the STP root bridge for VLAN 10
+! Configure PortFast on PC-facing access ports
+configure terminal
+
+interface fastEthernet 0/1
+spanning-tree portfast
+
+interface fastEthernet 0/6
+spanning-tree portfast
+
+interface fastEthernet 0/9
+spanning-tree portfast
+
+interface fastEthernet 0/19
+spanning-tree portfast
+
+end
+
+! PortFast allows access ports to transition immediately to forwarding state
+! This avoids normal STP startup delays for PCs
+! Do not enable PortFast on switch-to-switch trunk links
+
+! Verify STP operation on SW1
+
+show spanning-tree
+
+! Save configuration
+write memory
+

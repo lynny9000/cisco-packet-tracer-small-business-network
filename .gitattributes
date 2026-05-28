@@ -1,0 +1,4 @@
+
+# Enforces GitHub’s language detector (Linguist), to classify all .cisco files as Cisco IOS instead of plain tex
+
+*.cisco linguist-language=Cisco IOS

@@ -1,0 +1,116 @@
+! Lab 07: OSPF Routing Between Sites
+! Platform: Cisco Packet Tracer
+! Devices: R1, R2-WAN, SW1, SW2, SW3-Branch
+! Purpose:
+! - Understand dynamic routing with OSPF
+! - Configure router-to-router WAN links
+! - Configure OSPF neighbour relationships
+! - Advertise networks into OSPF
+! - Verify dynamically learned routes
+! - Verify inter-site communication between HQ and Branch Office
+
+! HQ Topology summary:
+! R1 -> SW1 -> SW2
+! VLAN 10 Sales:      192.168.10.0/24
+! VLAN 20 HR:         192.168.20.0/24
+! VLAN 30 IT:         192.168.30.0/24
+! VLAN 99 Management: 192.168.99.0/24
+
+! Branch Office:
+! R2-WAN -> SW3-Branch -> Branch-PC1
+! Branch LAN:         192.168.40.0/24
+
+! WAN link:
+! R1 Gi0/2      10.255.255.1/30
+! R2-WAN Gi0/0 10.255.255.2/30
+
+! Physical connections:
+! R1 Gi0/2 -> R2-WAN Gi0/0
+! R2-WAN Gi0/1 -> SW3-Branch Gi0/1
+! Branch-PC1 -> SW3-Branch Fa0/1
+
+! Configure R2-WAN
+enable
+configure terminal
+
+interface gigabitEthernet 0/0
+ip address 10.255.255.2 255.255.255.252
+no shutdown
+
+interface gigabitEthernet 0/1
+ip address 192.168.40.1 255.255.255.0
+no shutdown
+
+end
+
+! Configure R1 WAN interface
+configure terminal
+
+interface gigabitEthernet 0/2
+ip address 10.255.255.1 255.255.255.252
+no shutdown
+
+end
+
+! Verify WAN connectivity
+ping 10.255.255.2
+
+! Result:
+! successful replies
+
+! Configure OSPF on R1
+configure terminal
+
+router ospf 1
+
+network 192.168.10.0 0.0.0.255 area 0
+network 192.168.20.0 0.0.0.255 area 0
+network 192.168.30.0 0.0.0.255 area 0
+network 192.168.99.0 0.0.0.255 area 0
+network 10.255.255.0 0.0.0.3 area 0
+
+end
+
+! Configure OSPF on R2-WAN
+configure terminal
+
+router ospf 1
+
+network 192.168.40.0 0.0.0.255 area 0
+network 10.255.255.0 0.0.0.3 area 0
+
+end
+
+! Verify OSPF neighbour relationship
+show ip ospf neighbor
+
+! FULL/BDR
+! Routers successfully formed OSPF neighbour relationship
+! Verify dynamically learned OSPF routes
+show ip route
+
+! Important output:
+! O 192.168.40.0/24 [110/2] via 10.255.255.2
+
+! O means:
+! route learned dynamically through OSPF
+
+! Configure Branch-PC1
+
+! IP address:      192.168.40.10
+! Subnet mask:     255.255.255.0
+! Default gateway: 192.168.40.1
+
+! Verify inter-site connectivity
+
+! From Sales-PC1:
+ping 192.168.40.10
+
+! Result:
+! successful replies
+
+! OSPF dynamically routed traffic between HQ and Branch Office
+
+! Save configuration
+write memory
+

@@ -1,0 +1,49 @@
+! Lab 08: Wireless Access Point and VLAN Integration
+! Platform: Cisco Packet Tracer
+! Devices: SW1, Wireless Access Point, Wireless Laptop
+! Purpose:
+! - Configure a wireless access point
+! - Configure wireless SSID and security
+! - Connect wireless clients to the network
+! - Understand how wireless devices integrate into VLAN networks
+! - Verify wireless client connectivity
+! - Verify wireless traffic reaches VLAN gateway
+
+! Configure AP1 wireless settings
+! SSID:
+! Company-WiFi
+
+! Wireless security:
+! WPA2 Personal
+
+! Passphrase:
+! *****
+
+! AP1 connected to:
+! SW1 Fa0/20
+
+! SW1 Fa0/20 configured as access port in VLAN 10
+
+! Connect CEO-Laptop to Company-WiFi
+
+! CEO-Laptop wireless settings:
+! SSID: Company-WiFi
+! Password: *****
+
+! Static IP used because Packet Tracer wireless DHCP bridging was unreliable
+
+! CEO-Laptop IP configuration:
+! IP address:      192.168.10.50
+! Subnet mask:     255.255.255.0
+! Default gateway: 192.168.10.1
+
+! Verify wireless connectivity
+ping 192.168.10.1
+
+! Result:
+! successful replies
+
+! Wireless client successfully connected to VLAN 10 network through AP1
+
+! Save configuration
+write memory

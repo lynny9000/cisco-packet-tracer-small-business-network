@@ -1,0 +1,46 @@
+! Lab 09: ACLs and Network Security
+! Platform: Cisco Packet Tracer
+! Devices: R1, ISP, SW1, SW2
+! Purpose:
+! - Understand basic network security with ACLs
+! - Configure standard and extended ACLs
+! - Control traffic between networks
+! - Restrict access to internal VLANs
+! - Understand permit and deny logic
+! - Verify ACL behaviour with ping tests
+! - Apply ACLs to router interfaces
+
+
+! Verify ACL configuration
+show access-lists
+
+! Important output:
+! access-list 100 deny ip 198.51.100.0 0.0.0.255 192.168.0.0 0.0.255.255
+! access-list 100 permit ip any any
+
+! Verify interface ACL assignment
+show running-config interface gigabitEthernet 0/1
+
+! Important output:
+! ip access-group 100 in
+
+! Verify security behaviour
+
+! From Internet-PC:
+ping 192.168.10.10
+ping 192.168.20.10
+
+! Result:
+! failed replies
+! ACL successfully blocked inbound Internet access to internal VLANs
+
+! From Sales-PC1:
+ping 198.51.100.10
+
+! Result:
+! successful replies
+
+! Internal VLAN users can still reach outward networks
+
+! Save configuration
+write memory

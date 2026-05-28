@@ -1,0 +1,214 @@
+! Lab 03: NAT and Internet Edge
+! Platform: Cisco Packet Tracer
+! Devices: R1 and ISP
+! Purpose:
+! - Configure an outside/WAN link from R1 to a simulated ISP router
+! - Add a default route from R1 toward the ISP
+! - Configure NAT overload/PAT so internal VLANs can reach the outside network
+! - Verify NAT translations
+
+! physical connection:
+! R1 Gi0/1 -> ISP Gi0/0
+
+! point-to-point WAN link:
+! ISP Gi0/0: 203.0.113.1/30
+! R1 Gi0/1:  203.0.113.2/30
+
+! simulated internet-side network:
+! ISP Gi0/1:      198.51.100.1/24
+! Internet-PC:    198.51.100.10/24
+! Default gateway 198.51.100.1
+
+! R1 outside interface configuration
+! start from privileged/admin mode
+! prompt should be R1#
+
+configure terminal
+
+interface gigabitEthernet 0/1
+description Outside link to ISP Gi0/0
+ip address 203.0.113.2 255.255.255.252
+no shutdown
+exit
+
+end
+
+write memory
+
+! verify R1 outside interface is up
+show ip interface brief
+
+
+! ISP router interface configuration
+! start from privileged/admin mode
+! prompt should be ISP#
+
+configure terminal
+
+interface gigabitEthernet 0/0
+description Link to R1 Gi0/1
+ip address 203.0.113.1 255.255.255.252
+no shutdown
+exit
+
+end
+
+write memory
+
+! verify ISP interface is up
+show ip interface brief
+
+! verify R1 can reach the ISP router across the WAN link
+ping 203.0.113.1
+
+! add a default route from R1 toward the ISP
+! this tells R1 to send unknown/outside traffic to 203.0.113.1
+
+configure terminal
+
+ip route 0.0.0.0 0.0.0.0 203.0.113.1
+
+end
+
+write memory
+
+! verify the default route exists
+show ip route
+
+! expected result:
+! S* 0.0.0.0/0 [1/0] via 203.0.113.1
+! Gateway of last resort is 203.0.113.1
+
+! mark internal vlan subinterfaces as NAT inside
+configure terminal
+
+interface gigabitEthernet 0/0.10
+ip nat inside
+exit
+
+interface gigabitEthernet 0/0.20
+ip nat inside
+exit
+
+interface gigabitEthernet 0/0.30
+ip nat inside
+exit
+
+interface gigabitEthernet 0/0.99
+ip nat inside
+exit
+
+! mark the ISP-facing interface as NAT outside
+interface gigabitEthernet 0/1
+ip nat outside
+exit
+
+end
+
+write memory
+
+! create ACL 1 to match internal networks allowed to use NAT
+! wildcard mask 0.0.0.255 matches each /24 subnet
+
+configure terminal
+
+access-list 1 permit 192.168.10.0 0.0.0.255
+access-list 1 permit 192.168.20.0 0.0.0.255
+access-list 1 permit 192.168.30.0 0.0.0.255
+access-list 1 permit 192.168.99.0 0.0.0.255
+
+end
+
+write memory
+
+! verify ACL 1 contains the internal networks
+show access-lists
+
+
+! configure NAT overload/PAT
+! ACL 1 defines the internal networks allowed to be translated
+! R1 Gi0/1 is the outside interface facing the ISP
+! overload allows many inside devices to share the one outside interface IP
+
+configure terminal
+
+ip nat inside source list 1 interface gigabitEthernet 0/1 overload
+
+end
+
+write memory
+
+! verify NAT inside/outside and overload configuration
+show running-config | include ip nat
+
+! ISP internet-side interface configuration
+! start from privileged/admin mode
+! prompt should be ISP#
+
+configure terminal
+
+interface gigabitEthernet 0/1
+description Simulated internet LAN to Internet-PC
+ip address 198.51.100.1 255.255.255.0
+no shutdown
+exit
+
+end
+
+write memory
+
+! verify ISP internet-side interface is up
+show ip interface brief
+
+! from ISP#
+! verify ISP can reach the simulated internet host
+ping 198.51.100.10
+
+! from R1#
+! verify R1 can reach the simulated internet host through the ISP router
+ping 198.51.100.10
+
+! verify an internal client can reach the simulated internet host using NAT
+! from sales-pc1 command prompt
+! expected result: success because NAT overload translates the inside private address
+! ping 198.51.100.10
+
+! verify NAT translations on R1
+show ip nat translations
+
+! expected result:
+! Inside local addresses from 192.168.10.0/24 are translated to inside global address 203.0.113.2
+! Outside global destination is 198.51.100.10
+
+! verify another internal vlan can reach the simulated internet host using NAT
+! from hr-pc1 command prompt
+! expected result: success because NAT overload also translates vlan 20 traffic
+! ping 198.51.100.10
+
+! verify NAT translations on R1
+show ip nat translations
+
+! expected result:
+! Inside local addresses from 192.168.20.0/24 are translated to inside global address 203.0.113.2
+! NAT translation entries are temporary and may age out after traffic stops
+
+! verify IT vlan can reach the simulated internet host using NAT
+! from it-pc1 command prompt
+! expected result: success because NAT overload also translates vlan 30 traffic
+! ping 198.51.100.10
+
+! verify NAT translations on R1
+show ip nat translations
+
+! expected result:
+! Inside local addresses from 192.168.30.0/24 are translated to inside global address 203.0.113.2
+! NAT translation entries are temporary and may age out after traffic stops
+
+! verify R1 still has a default route toward the ISP
+show ip route
+
+! expected result:
+! S* 0.0.0.0/0 via 203.0.113.1
+! Gateway of last resort is 203.0.113.1
+
+
